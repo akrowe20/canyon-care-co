@@ -1,40 +1,121 @@
 const CONTACT_EMAIL = "canyoncareco@gmail.com";
 
+
+// --------------------------------------------------
+// Direct email links
+// --------------------------------------------------
+
 document.querySelectorAll("[data-contact-email]").forEach((link) => {
   link.textContent = CONTACT_EMAIL;
   link.href = `mailto:${CONTACT_EMAIL}`;
 });
+
+
+// --------------------------------------------------
+// Copyright year
+// --------------------------------------------------
+
 document.getElementById("year").textContent = new Date().getFullYear();
+
+
+// --------------------------------------------------
+// Mobile navigation
+// --------------------------------------------------
 
 const navToggle = document.querySelector(".nav-toggle");
 const nav = document.getElementById("nav");
+
 navToggle.addEventListener("click", () => {
   const isOpen = nav.classList.toggle("open");
-  navToggle.setAttribute("aria-expanded", String(isOpen));
+
+  navToggle.setAttribute(
+    "aria-expanded",
+    String(isOpen)
+  );
 });
-nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => {
-  nav.classList.remove("open");
-  navToggle.setAttribute("aria-expanded", "false");
-}));
+
+
+nav.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => {
+    nav.classList.remove("open");
+    navToggle.setAttribute("aria-expanded", "false");
+  });
+});
+
+
+// --------------------------------------------------
+// Canyon Care request form
+// --------------------------------------------------
 
 const form = document.getElementById("contact-form");
-form.addEventListener("submit", (event) => {
+const formStatus = document.getElementById("form-status");
+const submitButton = form.querySelector('button[type="submit"]');
+
+
+form.addEventListener("submit", async (event) => {
+
+  // Keep the visitor on the Canyon Care website.
   event.preventDefault();
+
+  formStatus.textContent = "";
+
+  // Prevent accidental duplicate submissions.
+  submitButton.disabled = true;
+  submitButton.textContent = "Sending...";
+
   const data = new FormData(form);
-  const subject = `Service request: ${data.get("service") || "Canyon Care"}`;
-  const body = [
-    `Name: ${data.get("name")}`,
-    `Email: ${data.get("email")}`,
-    `Phone: ${data.get("phone") || "Not provided"}`,
-    `Neighborhood / road: ${data.get("location") || "Not provided"}`,
-    `Service: ${data.get("service")}`,
-    `Start date: ${data.get("date") || "Flexible / not provided"}`,
-    `Frequency: ${data.get("frequency")}`,
-    `Prefers phone/text: ${data.get("callback") ? "Yes" : "No"}`,
-    "",
-    "Details:",
-    data.get("details")
-  ].join("\n");
-  window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  document.getElementById("form-status").textContent = "Your email app should open with the request filled in.";
+
+
+  try {
+
+    const response = await fetch(form.action, {
+      method: form.method,
+      body: data,
+      headers: {
+        "Accept": "application/json"
+      }
+    });
+
+
+    if (response.ok) {
+
+      // Clear the completed form.
+      form.reset();
+
+      // Show confirmation without leaving the website.
+      formStatus.textContent =
+        "Thanks! Your request has been sent. We'll be in touch soon.";
+
+    } else {
+
+      const result = await response.json();
+
+      if (result.errors) {
+
+        formStatus.textContent = result.errors
+          .map((error) => error.message)
+          .join(", ");
+
+      } else {
+
+        formStatus.textContent =
+          "Something went wrong. Please try again or email us directly.";
+
+      }
+
+    }
+
+  } catch (error) {
+
+    formStatus.textContent =
+      "Something went wrong. Please try again or email us directly.";
+
+  } finally {
+
+    // Restore the button regardless of success or error.
+    submitButton.disabled = false;
+    submitButton.textContent = "Send Request";
+
+  }
+
 });
