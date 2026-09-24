@@ -1,4 +1,4 @@
-const CONTACT_EMAIL = "akrowe20@gmail.com";
+const CONTACT_EMAIL = "canyoncareco@gmail.com";
 
 document.querySelectorAll("[data-contact-email]").forEach((link) => {
   link.textContent = CONTACT_EMAIL;
